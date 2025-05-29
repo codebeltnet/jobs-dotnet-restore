@@ -60,7 +60,7 @@ jobs:
           includePreview: ${{ inputs.include-preview }}
 
       - if: inputs.use-restore-cache
-        name: Computer Restore Cache Key
+        name: Compute Restore Cache Key
         id: sanitizer
         run: |
           sanitizedKey=${{ inputs.restore-cache-key }}
