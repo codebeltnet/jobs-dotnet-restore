@@ -1,0 +1,89 @@
+name: .NET Pack
+
+on:
+  workflow_call:
+    inputs:
+      projects:
+        description: Path to the project(s) file to restore. Pass empty to restore all dependencies of a solution. Supports globbing. Default is an empty string.
+        required: false
+        type: string
+        default: ''
+      use-restore-cache:
+        description: Whether to use the restore cache or not. Default is not to use the restore cache.
+        required: false
+        type: boolean
+        default: false
+      restore-cache-key:
+        description: Allows for a custom provided key that will be used instead of the default implementation.
+        required: false
+        type: string
+        default: ''
+      runs-on:
+        description: The type of machine to run the job on. Default is ubuntu-24.04.
+        required: false
+        type: string
+        default: 'ubuntu-24.04'
+      include-preview:
+        description: When set to true, includes preview versions of .NET. Default is false.
+        required: false
+        type: boolean
+        default: false
+      verbosity-level:
+        description: Sets the verbosity level of the command. Allowed values are quiet, minimal, normal, detailed, and diagnostic. Default is quiet.
+        required: false
+        type: string
+        default: 'quiet'
+      timeout-minutes:
+        description: The maximum time in minutes to allow the job to run. Default is 15 minutes.
+        required: false
+        type: number
+        default: 15
+    outputs:
+      restore-cache-key:
+        description: The restore cache key that can be used by other actions and/or workflows.
+        value: ${{ steps.sanitizer.outputs.key }}
+
+jobs:
+  pack:
+    name: 🏷️ Restore
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - name: Checkout
+        uses: codebeltnet/git-checkout@v1
+
+      - name: Install .NET
+        uses: codebeltnet/install-dotnet@v2
+        with:
+          includePreview: ${{ inputs.include-preview }}
+
+      - if: inputs.use-restore-cache
+        id: sanitizer
+        run: |
+          sanitizedKey=${{ inputs.restore-cache-key }}
+          sanitizedKey=${sanitizedKey/dotnet-restore-/}  # Remove "dotnet-restore-" if it exists
+          key=dotnet-restore-${sanitizedKey}
+          if [ "$sanitizedKey" == "" ]; then
+            key=dotnet-restore-${{ hashFiles('**/*.csproj', '**/*.cs') }}
+          fi
+          echo "key=$key" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - if: inputs.use-restore-cache
+        name: Cache Files
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}
+            !${{ github.workspace }}/.git
+            ~/.nuget/packages
+          key: ${{ steps.sanitizer.outputs.key }}
+          enableCrossOsArchive: true
+
+      - if: inputs.use-restore-cache == false || steps.cache.outputs.cache-hit != 'true'
+        name: Restore Dependencies
+        uses: codebeltnet/dotnet-restore@v3
+        with:
+          projects: ${{ inputs.projects }}
+          level: ${{ inputs.verbosity-level }}
