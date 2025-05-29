@@ -41,13 +41,15 @@ on:
     outputs:
       restore-cache-key:
         description: The restore cache key that can be used by other actions and/or workflows.
-        value: ${{ steps.sanitizer.outputs.key }}
+        value: ${{ jobs.restore.outputs.key }}
 
 jobs:
-  pack:
+  restore:
     name: 🏷️ Restore
     runs-on: ${{ inputs.runs-on }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
+    outputs:
+      key: ${{ steps.sanitizer.outputs.key }}
     steps:
       - name: Checkout
         uses: codebeltnet/git-checkout@v1
