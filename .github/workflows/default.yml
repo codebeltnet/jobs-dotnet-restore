@@ -1,4 +1,4 @@
-name: .NET Pack
+name: .NET Restore
 
 on:
   workflow_call:
