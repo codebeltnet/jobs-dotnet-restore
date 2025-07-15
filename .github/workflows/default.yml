@@ -67,7 +67,7 @@ jobs:
           sanitizedKey=${sanitizedKey/dotnet-restore-/}  # Remove "dotnet-restore-" if it exists
           key=dotnet-restore-${sanitizedKey}
           if [ "$sanitizedKey" == "" ]; then
-            key=dotnet-restore-${{ hashFiles('**/*.csproj', '**/*.cs') }}
+            key=dotnet-restore-${{ hashFiles('Directory.Packages.props', '**/*.csproj', '**/*.cs') }}
           fi
           echo "key=$key" >> $GITHUB_OUTPUT
         shell: bash
